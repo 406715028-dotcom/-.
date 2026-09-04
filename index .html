@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เกมจับคู่คำศัพท์ อวัยวะในร่างกาย - ภาษามลายู</title>
+<style>
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Trebuchet MS', 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(160deg, #FFF3B0 0%, #FFD6E8 45%, #B5EAEA 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .header {
+    text-align: center;
+    background: #ffffffcc;
+    border-radius: 24px;
+    padding: 18px 20px;
+    max-width: 700px;
+    width: 100%;
+    box-shadow: 0 6px 0 #f7c8dc, 0 8px 20px rgba(0,0,0,0.08);
+    margin-bottom: 18px;
+  }
+
+  .header h1 {
+    margin: 0 0 6px 0;
+    font-size: clamp(1.3rem, 4vw, 1.9rem);
+    color: #FF5C8A;
+  }
+
+  .header h2 {
+    margin: 0 0 10px 0;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    color: #5C4B99;
+  }
+
+  .header p {
+    margin: 0;
+    font-size: clamp(0.95rem, 3vw, 1.1rem);
+    color: #444;
+    background: #FFF3B0;
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 999px;
+  }
+
+  .status-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .score-box, .restart-btn {
+    font-size: clamp(1rem, 3.5vw, 1.3rem);
+    font-weight: bold;
+    border-radius: 999px;
+    padding: 10px 22px;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+  }
+
+  .score-box {
+    background: #ffffff;
+    color: #FF5C8A;
+  }
+
+  .restart-btn {
+    background: #7ED957;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  .restart-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+  }
+
+  .message {
+    min-height: 40px;
+    font-size: clamp(1.1rem, 4vw, 1.5rem);
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 4px;
+    border-radius: 12px;
+    transition: all 0.2s;
+  }
+
+  .message.correct { color: #2E9E4C; }
+  .message.wrong { color: #E85A4F; }
+  .message.win {
+    color: #FF5C8A;
+    font-size: clamp(1.3rem, 5vw, 1.8rem);
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .column-title {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #5C4B99;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .card {
+    background: white;
+    border: 4px solid #FFD166;
+    border-radius: 18px;
+    padding: 14px 8px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 5px 0 #e0ab3d;
+    transition: transform 0.12s, box-shadow 0.12s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 90px;
+  }
+
+  .card .emoji {
+    font-size: clamp(2rem, 8vw, 2.8rem);
+    line-height: 1;
+  }
+
+  .card .word {
+    font-size: clamp(1.1rem, 5vw, 1.5rem);
+    font-weight: bold;
+    color: #333;
+  }
+
+  .card:active {
+    transform: scale(0.96);
+  }
+
+  .card.selected {
+    border-color: #FF5C8A;
+    box-shadow: 0 5px 0 #c93b64;
+    transform: translateY(-3px);
+  }
+
+  .card.matched {
+    background: #E9FBE5;
+    border-color: #7ED957;
+    box-shadow: 0 3px 0 #5fb63a;
+    cursor: default;
+    opacity: 0.75;
+    transform: scale(0.97);
+  }
+
+  .card.shake {
+    animation: shake 0.4s;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .win-banner {
+    display: none;
+    background: #FFF3B0;
+    border: 4px dashed #FF5C8A;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    max-width: 500px;
+    margin: 20px auto 0;
+    font-size: clamp(1.2rem, 5vw, 1.6rem);
+    color: #FF5C8A;
+    font-weight: bold;
+  }
+
+  @media (max-width: 480px) {
+    .board {
+      gap: 14px;
+    }
+    .card {
+      min-height: 76px;
+      padding: 10px 4px;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🧩 เกมจับคู่คำศัพท์ "อวัยวะในร่างกาย"</h1>
+    <h2>ภาษามลายู ชั้นประถมศึกษาปีที่ 1</h2>
+    <p>เลือกภาพ แล้วเลือกคำศัพท์ภาษามลายูที่มีความหมายตรงกัน</p>
+  </div>
+
+  <div class="status-bar">
+    <div class="score-box">จับคู่แล้ว: <span id="score">0</span>/<span id="total">20</span></div>
+    <button class="restart-btn" onclick="startGame()">🔄 เริ่มเกมใหม่</button>
+  </div>
+
+  <div class="message" id="message">&nbsp;</div>
+
+  <div class="board">
+    <div>
+      <div class="column-title">🖼️ ภาพ</div>
+      <div class="cards" id="imageCards"></div>
+    </div>
+    <div>
+      <div class="column-title">🔤 คำศัพท์</div>
+      <div class="cards" id="wordCards"></div>
+    </div>
+  </div>
+
+  <div class="win-banner" id="winBanner">
+    Tahniah! 🎉 เก่งมาก จับคู่ครบแล้ว
+  </div>
+
+<script>
+  const vocab = [
+    { id: 1, emoji: "👁️", word: "Mata", thai: "ตา" },
+    { id: 2, emoji: "👃", word: "Hidung", thai: "จมูก" },
+    { id: 3, emoji: "👄", word: "Mulut", thai: "ปาก" },
+    { id: 4, emoji: "👂", word: "Telinga", thai: "หู" },
+    { id: 5, emoji: "🧑", word: "Kepala", thai: "ศีรษะ" },
+    { id: 6, emoji: "✋", word: "Tangan", thai: "มือ" },
+    { id: 7, emoji: "🦶", word: "Kaki", thai: "ขา/เท้า" },
+    { id: 8, emoji: "🖐️", word: "Jari", thai: "นิ้ว" },
+    { id: 9, emoji: "🦷", word: "Gigi", thai: "ฟัน" },
+    { id: 10, emoji: "👅", word: "Lidah", thai: "ลิ้น" },
+    { id: 11, emoji: "💅", word: "Kuku", thai: "เล็บ" },
+    { id: 12, emoji: "🤨", word: "Alis", thai: "คิ้ว" },
+    { id: 13, emoji: "🫀", word: "Jantung", thai: "หัวใจ" },
+    { id: 14, emoji: "🫁", word: "Paru-paru", thai: "ปอด" },
+    { id: 15, emoji: "🧠", word: "Otak", thai: "สมอง" },
+    { id: 16, emoji: "🦴", word: "Tulang", thai: "กระดูก" },
+    { id: 17, emoji: "🫃", word: "Perut", thai: "ท้อง" },
+    { id: 18, emoji: "🤷", word: "Bahu", thai: "ไหล่" },
+    { id: 19, emoji: "💪", word: "Siku", thai: "ศอก" },
+    { id: 20, emoji: "🦵", word: "Lutut", thai: "เข่า" }
+  ];
+
+  let selectedImage = null;
+  let selectedWord = null;
+  let matchedCount = 0;
+  let lockBoard = false;
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function startGame() {
+    selectedImage = null;
+    selectedWord = null;
+    matchedCount = 0;
+    lockBoard = false;
+    document.getElementById("score").textContent = "0";
+    document.getElementById("total").textContent = vocab.length;
+    document.getElementById("message").textContent = "\u00A0";
+    document.getElementById("message").className = "message";
+    document.getElementById("winBanner").style.display = "none";
+
+    const imageOrder = shuffle(vocab);
+    const wordOrder = shuffle(vocab);
+
+    const imageContainer = document.getElementById("imageCards");
+    const wordContainer = document.getElementById("wordCards");
+    imageContainer.innerHTML = "";
+    wordContainer.innerHTML = "";
+
+    imageOrder.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.id = item.id;
+      card.dataset.type = "image";
+      card.innerHTML = `<div class="emoji">${item.emoji}</div><div class="word">${item.thai}</div>`;
+      card.addEventListener("click", () => selectCard(card, "image"));
+      imageContainer.appendChild(card);
+    });
+
+    wordOrder.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.id = item.id;
+      card.dataset.type = "word";
+      card.innerHTML = `<div class="word">${item.word}</div>`;
+      card.addEventListener("click", () => selectCard(card, "word"));
+      wordContainer.appendChild(card);
+    });
+  }
+
+  function selectCard(card, type) {
+    if (lockBoard) return;
+    if (card.classList.contains("matched")) return;
+
+    if (type === "image") {
+      if (selectedImage) selectedImage.classList.remove("selected");
+      if (selectedImage === card) {
+        selectedImage = null;
+        return;
+      }
+      selectedImage = card;
+      card.classList.add("selected");
+    } else {
+      if (selectedWord) selectedWord.classList.remove("selected");
+      if (selectedWord === card) {
+        selectedWord = null;
+        return;
+      }
+      selectedWord = card;
+      card.classList.add("selected");
+    }
+
+    if (selectedImage && selectedWord) {
+      checkMatch();
+    }
+  }
+
+  function checkMatch() {
+    lockBoard = true;
+    const messageEl = document.getElementById("message");
+
+    if (selectedImage.dataset.id === selectedWord.dataset.id) {
+      messageEl.textContent = "Betul! เก่งมาก ✅";
+      messageEl.className = "message correct";
+
+      selectedImage.classList.add("matched");
+      selectedWord.classList.add("matched");
+      selectedImage.classList.remove("selected");
+      selectedWord.classList.remove("selected");
+
+      matchedCount++;
+      document.getElementById("score").textContent = matchedCount;
+
+      selectedImage = null;
+      selectedWord = null;
+      lockBoard = false;
+
+      if (matchedCount === vocab.length) {
+        setTimeout(() => {
+          messageEl.textContent = "\u00A0";
+          document.getElementById("winBanner").style.display = "block";
+        }, 600);
+      }
+    } else {
+      messageEl.textContent = "Cuba lagi! ลองใหม่อีกครั้ง ❌";
+      messageEl.className = "message wrong";
+
+      selectedImage.classList.add("shake");
+      selectedWord.classList.add("shake");
+
+      setTimeout(() => {
+        selectedImage.classList.remove("selected", "shake");
+        selectedWord.classList.remove("selected", "shake");
+        selectedImage = null;
+        selectedWord = null;
+        lockBoard = false;
+        messageEl.textContent = "\u00A0";
+        messageEl.className = "message";
+      }, 700);
+    }
+  }
+
+  startGame();
+</script>
+
+</body>
+</html>
